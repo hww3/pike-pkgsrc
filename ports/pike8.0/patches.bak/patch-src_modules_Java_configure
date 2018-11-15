@@ -1,0 +1,39 @@
+$NetBSD$
+
+--- src/modules/Java/configure.orig	2017-08-01 22:05:07.000000000 +0000
++++ src/modules/Java/configure
+@@ -6450,7 +6450,9 @@ else
+ 	     "$java_arch_dir/$pike_cv_java_threads_type" \
+              "$java_arch_dir/classic" "$java_arch_dir" \
+ 	     "." "../bin" "../bin/classic"; do
+-      if test -d "$tmp_java_lib_dir/$i/." && "$LS" $tmp_java_lib_dir/$i/lib* >/dev/null 2>&1; then
++echo "does $$tmp_java_lib_dir/$i/. exist?"
++"$LS" "$tmp_java_lib_dir/$i/lib*"
++      if test -d "$tmp_java_lib_dir/$i/." && "$LS" "$tmp_java_lib_dir/$i/"lib* >/dev/null 2>&1; then
+         pike_cv_java_lib_dir="$pike_cv_java_lib_dir$tmp_java_lib_dir/$i "
+       else
+ 	:
+@@ -6468,8 +6470,8 @@ $as_echo "$pike_cv_java_lib_dir" >&6; }
+   if test "x$pike_cv_java_lib_dir" = xno; then :; else
+     echo Adding $pike_cv_java_lib_dir to the library search path.
+     for i in $pike_cv_java_lib_dir; do
+-      LDFLAGS="-L$i -R$i ${LDFLAGS}"
+-      LINKER_OPTIONS="-L$i -R$i ${LINKER_OPTIONS}"
++      LDFLAGS="-L\"$i\" -R\"$i\" ${LDFLAGS}"
++      LINKER_OPTIONS="-L\"$i\" -R\"$i\" ${LINKER_OPTIONS}"
+       JAVA_LIBPATH="${JAVA_LIBPATH}${JAVA_LIBPATH:+:}$i"
+       LIBPATH="${LIBPATH}${LIBPATH:+:}$i"
+     done
+@@ -6502,10 +6504,10 @@ else
+ 			       "$pike_cv_java_java_home"/.. \
+ 			       "$pike_cv_java_java_home" \
+ 			       "$pike_java_user_include_directory"; do
+-      if test -d $tmp_java_incdir/. && "$LS" "$tmp_java_incdir/include/jni.h" >/dev/null 2>&1 ; then
++      if test -d "$tmp_java_incdir/." && "$LS" "$tmp_java_incdir/include/jni.h" >/dev/null 2>&1 ; then
+ 	 pike_cv_java_include_dir="$tmp_java_incdir/include"
+       else
+-        if test -d $tmp_java_incdir/. -a -d $tmp_java_incdir/Headers/. &&\
++        if test -d "$tmp_java_incdir/." -a -d "$tmp_java_incdir/Headers/." &&\
+         	  "$LS" "$tmp_java_incdir/Headers/jni.h" >/dev/null 2>&1 ; then
+ 	  pike_cv_java_include_dir="$tmp_java_incdir/Headers"
+ 	else

@@ -1,0 +1,13 @@
+--- buildlink3.mk.orig	2017-09-26 12:42:08.848542464 +0000
++++ buildlink3.mk	2017-09-26 12:43:35.065021764 +0000
+@@ -8,6 +8,10 @@
+ BUILDLINK_API_DEPENDS.openjdk8+=	openjdk8>=1.8.0
+ BUILDLINK_PKGSRCDIR.openjdk8?=		../../lang/openjdk8
+ 
++LIBDIR_ARCH=    ${MACHINE_ARCH:S/x86_64/amd64/:S/sparc64/sparcv9/:C/^e?arm.*$/arm/}
++BUILDLINK_LIBDIRS.openjdk8+=java/openjdk8/jre/lib/${LIBDIR_ARCH}/server
++BUILDLINK_LIBDIRS.openjdk8+=java/openjdk8/jre/lib/${LIBDIR_ARCH}
++
+ .endif	# OPENJDK8_BUILDLINK3_MK
+ 
+ BUILDLINK_TREE+=	-openjdk8

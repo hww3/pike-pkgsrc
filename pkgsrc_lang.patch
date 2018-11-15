@@ -1,0 +1,120 @@
+diff --git a/lang/oracle-jdk8/Makefile b/lang/oracle-jdk8/Makefile
+index 9e8a011..7da19bb 100644
+--- a/lang/oracle-jdk8/Makefile
++++ b/lang/oracle-jdk8/Makefile
+@@ -79,3 +79,4 @@ pre-install:
+ 		${WRKSRC}/db/bin/sysinfo.bat
+ 
+ .include "../../mk/bsd.pkg.mk"
++
+diff --git a/lang/oracle-jdk8/buildlink3.mk b/lang/oracle-jdk8/buildlink3.mk
+index d2ed6c2..60a3024 100644
+--- a/lang/oracle-jdk8/buildlink3.mk
++++ b/lang/oracle-jdk8/buildlink3.mk
+@@ -10,22 +10,36 @@ BUILDLINK_ABI_DEPENDS.oracle-jdk8+=	oracle-jdk8>=8.0.45
+ BUILDLINK_PKGSRCDIR.oracle-jdk8?=	../../lang/oracle-jdk8
+ BUILDLINK_DEPMETHOD.oracle-jdk8?= build
+ 
+-BUILDLINK_PASSTHRU_DIRS+=	${BUILDLINK_JAVA_PREFIX.oracle-jre8}
++CHECK_BUILTIN.oracle-jdk8:=     yes
++.include "../../lang/oracle-jdk8/builtin.mk"
++CHECK_BUILTIN.oracle-jdk8:=     no
++
++.if !empty(USE_BUILTIN.oracle-jdk8:M[yY][eE][sS])
++BUILDLINK_JAVA_PREFIX.oracle-jdk8=      ${JAVADK8}
++PKG_CONFIG_BASE.oracle-jdk8=	${BUILDLINK_JAVA_PREFIX.oracle-jdk8}
++# allow the include directory to pass through when using the builtin jdk
++# we should get the lib directory as a passthrough from the jre
++BUILDLINK_PASSTHRU_DIRS+=       ${BUILDLINK_JAVA_PREFIX.oracle-jdk8}/include
++.else
++BUILDLINK_JAVA_PREFIX.oracle-jdk8=      ${PREFIX}/java/oracle-8
++.endif
++
++BUILDLINK_PREFIX.oracle-jdk8=	${BUILDLINK_JAVA_PREFIX.oracle-jdk8}
++
++BUILDLINK_INCDIRS.oracle-jdk8+=include
++BUILDLINK_LIBDIRS.oracle-jdk8=
+ 
+ .include "../../mk/bsd.fast.prefs.mk"
+ 
+ .if ${OPSYS} == "SunOS"
+-BUILDLINK_CPPFLAGS.oracle-jdk8=						\
+-	-I${BUILDLINK_JAVA_PREFIX.oracle-jre8}/include			\
+-	-I${BUILDLINK_JAVA_PREFIX.oracle-jre8}/include/solaris
++BUILDLINK_INCDIRS.oracle-jdk8+=include/solaris
++.elif ${OPSYS} == "Darwin"
++BUILDLINK_INCDIRS.oracle-jdk8+=include/darwin
+ .else
+-BUILDLINK_CPPFLAGS.oracle-jdk8=						\
+-	-I${BUILDLINK_JAVA_PREFIX.oracle-jre8}/include			\
+-	-I${BUILDLINK_JAVA_PREFIX.oracle-jre8}/include/linux
++BUILDLINK_INCDIRS.oracle-jdk8+=include/linux
+ .endif
+ 
+ BUILDLINK_DEPMETHOD.oracle-jre8?=	${BUILDLINK_DEPMETHOD.oracle-jdk8}
+-.include "../../lang/oracle-jre8/buildlink3.mk"
+ .endif # ORACLE_JDK8_BUILDLINK3_MK
+ 
+ BUILDLINK_TREE+=	-oracle-jdk8
+diff --git a/lang/oracle-jdk8/builtin.mk b/lang/oracle-jdk8/builtin.mk
+index 4c092ef..59d03ff 100644
+--- a/lang/oracle-jdk8/builtin.mk
++++ b/lang/oracle-jdk8/builtin.mk
+@@ -34,6 +34,11 @@ BUILTIN_FIND_FILES.JDK8+=	${_JAVA_HOME_ANSWER}/bin/javac
+ .if !defined(IS_BUILTIN.oracle-jdk8)
+ .  if empty(JDK8:M__nonexistent__)
+ IS_BUILTIN.oracle-jdk8=	yes
++.  if !empty(JDK8:M${_JAVA_HOME_ANSWER}/bin/javac)
++JAVADK8= ${_JAVA_HOME_ANSWER}
++.else 
++JAVADK8!= dirname `dirname ${JDK8:Q}`
++. endif
+ .  else
+ IS_BUILTIN.oracle-jdk8=	no
+ .  endif
+diff --git a/lang/oracle-jre8/buildlink3.mk b/lang/oracle-jre8/buildlink3.mk
+index 03353dd..0529658 100644
+--- a/lang/oracle-jre8/buildlink3.mk
++++ b/lang/oracle-jre8/buildlink3.mk
+@@ -19,6 +19,26 @@ BUILDLINK_JAVA_PREFIX.oracle-jre8=	${JAVAVM8}
+ BUILDLINK_JAVA_PREFIX.oracle-jre8=	${PREFIX}/java/oracle-8
+ .endif
+ 
++BUILDLINK_PASSTHRU_DIRS+=	${BUILDLINK_JAVA_PREFIX.oracle-jre8}
++
++.if empty(MACHINE_PLATFORM:MDarwin-*-*)
++LIBDIR_ARCH=    ${MACHINE_ARCH:S/x86_64/amd64/:S/sparc64/sparcv9/:C/^e?arm.*$/arm/}
++BUILDLINK_LIBDIRS.oracle-jre8+=lib/${LIBDIR_ARCH}/server
++BUILDLINK_LIBDIRS.oracle-jre8+=lib/${LIBDIR_ARCH}
++BUILDLINK_RPATHDIRS.oracle-jre8+=lib/${LIBDIR_ARCH}
++BUILDLINK_RPATHDIRS.oracle-jre8+=lib/${LIBDIR_ARCH}/server
++.else
++BUILDLINK_LIBDIRS.oracle-jre8+=lib
++BUILDLINK_LIBDIRS.oracle-jre8+=lib/server
++BUILDLINK_LDFLAGS.oracle-jre8+=-Wl,-rpath,${BUILDLINK_JAVA_PREFIX.oracle-jre8}/lib
++BUILDLINK_LDFLAGS.oracle-jre8+=-Wl,-rpath,${BUILDLINK_JAVA_PREFIX.oracle-jre8}/lib/server
++.endif
++
++BUILDLINK_PREFIX.oracle-jre8= ${BUILDLINK_JAVA_PREFIX.oracle-jre8}
++
++# according to java-vm.mk, build time dependencies come from jdk
++BUILDLINK_INCDIRS.oracle-jre8=
++
+ UNLIMIT_RESOURCES+=	datasize	# Must be at least 131204
+ .endif # ORACLE_JRE8_BUILDLINK3_MK
+ 
+diff --git a/lang/oracle-jre8/builtin.mk b/lang/oracle-jre8/builtin.mk
+index 3b28a65..eae5a08 100644
+--- a/lang/oracle-jre8/builtin.mk
++++ b/lang/oracle-jre8/builtin.mk
+@@ -20,8 +20,8 @@ BUILTIN_FIND_FILES.JAVAVM8=	\
+ ###
+ .if ${OPSYS} == "Darwin" && \
+     !empty(JAVAVM8:M__nonexistent__)
+-_JRE_HOME=	\
+-	/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home
++#_JRE_HOME=	\
++#	/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home
+ .  if exists(${_JRE_HOME})
+ JAVAVM8=	${_JRE_HOME}
+ .  endif

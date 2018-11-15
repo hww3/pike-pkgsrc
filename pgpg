@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+PATH=/opt/local/bin:/usr/pkg/bin:/opt/pkg/bin:$PATH
+echo "$*" >> /tmp/foo
+echo "gpg --passphrase-fd 3 --batch $* 3<<< $SIGNING_KEY_PASSWORD" >> /tmp/foo
+gpg --passphrase-fd 3 --batch $* 3<<< $SIGNING_KEY_PASSWORD
